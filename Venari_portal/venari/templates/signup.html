@@ -1,0 +1,28 @@
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label>First name</label>
+        <input type="text" id="first_name" name="First_name" placeholder="Enter username/email" required>
+    </div>
+    <div>
+        <label>Last name</label>
+        <input type="text" id="last_name" name="Last_name" placeholder="Enter username/email" required>
+    </div>
+    <div>
+        <label>gender</label>
+        <input type="text" id="gender" name="Gender" placeholder="Enter gender" required>
+    </div>
+    <div>
+        <label>Contact Number</label>
+        <input type="text" id="phone_number" name="Phone_number" placeholder="Contact Number" required>
+    </div>
+    <div>
+        <label>Username or email</label>
+        <input type="text" id="username" name="Username" placeholder="Enter username/email" required>
+    </div>
+    <div>
+        <label>Password</label>
+        <input type="text" id="password" name="Password" placeholder="Enter password" required>
+    </div>
+    <input type="submit" value="Submit">
+</form>
