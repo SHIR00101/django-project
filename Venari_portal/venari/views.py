@@ -45,6 +45,7 @@ def signup(request):
         first_name=request.POST['First_name']
         last_name=request.POST['Last_name']
         password = request.POST['Password']
+        cpass = request.POST['Confirm_password']
         phone = request.POST['Phone_number']
         gender = request.POST['Gender']
         #image = "none"
@@ -55,6 +56,9 @@ def signup(request):
             return redirect('/login')
         elif uniqueuser:
             messages.error(request, "Username exists.")
+            return redirect('/login')
+        elif password != cpass:
+            messages.error(request, "Password doesn't match.")
             return redirect('/login')
 
         user = User.objects.create_user(first_name=first_name, last_name=last_name, email=email, username=email, password=password)
