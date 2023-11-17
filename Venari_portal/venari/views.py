@@ -10,8 +10,8 @@ def user_login(request):
         return redirect("/")
     else:
         if request.method == "POST":
-            username = request.POST.get('Username')
-            password = request.POST.get('Password')
+            username = request.POST.get('username')
+            password = request.POST.get('password')
             try:
                #account exist
                 user = authenticate(username=User.objects.get(username=username), password=password)
@@ -21,10 +21,10 @@ def user_login(request):
             #invalid username/password
             if user is None:
                 messages.error(request, "Please enter a valid username or password.")
-                return redirect('/user_login')
+                return redirect('/login')
             elif user.is_superuser:
                 messages.error(request, "Please enter a valid username or password.")
-                return redirect('/user_login')
+                return redirect('/login')
             
             else:
                 #check for login if it activate or not
@@ -34,20 +34,20 @@ def user_login(request):
                     user1 = company.objects.get(user=user)    
                 if user1.user_type == "applicant" and user1.status=="Activate":
                     login(request, user)
-                    return redirect("/signup")  
+                    return redirect("/login")  
                 elif user1.user_type == "applicant" and user1.status=="Deactivate":
                     messages.error(request, "Account is deactivated. Please contact the admin.")
-                    return redirect('/user_login')
+                    return redirect('/login')
                 elif user1.user_type == "company":
                     messages.error(request, "Please enter a valid username or password.")
-                    return redirect('/user_login')
+                    return redirect('/login')
                 else:
                     messages.error(request, "Please enter a valid username or password.")
-                    return redirect('/user_login')      
+                    return redirect('/login')      
 
     return render(request, "login.html")
 
-def signup(request):
+def user_signup(request):
     if request.method=="POST":   
         username = request.POST['Username']
         email = request.POST['Username']
@@ -78,3 +78,78 @@ def signup(request):
         return render(request, "login.html")
     return render(request, "signup.html")
 
+def company_signup(request):
+    if request.method=="POST":   
+        username = request.POST['username']
+        company_name = request.POST['company_name']
+        email = request.POST['email']
+        first_name=request.POST['first_name']
+        last_name=request.POST['last_name']
+        password = request.POST['password']
+        cpass = request.POST['confirm_password']
+        phone = request.POST['phone_number']
+        gender = request.POST['gender']
+        company_logo = request.FILES['company_logo']
+        uniqueemail = User.objects.filter(email=email)
+        uniqueuser = User.objects.filter(username=username)
+        
+        if uniqueemail:
+            messages.error(request, "Email exists.")
+            return redirect('/company_login')
+        elif uniqueuser:
+            messages.error(request, "Username exists.")
+            return redirect('/company_login')
+        elif password != cpass:
+            messages.error(request, "Password doesn't match.")
+            return redirect('/company_login')
+        elif company.objects.filter(phone_number=phone).exists() or job_seeker.objects.filter(phone_number=phone).exists():
+            messages.error(request, "Phone number already exist.")
+            return redirect('/company_login')
+        elif company.objects.filter(company_name=company_name).exists():
+            messages.error(request, "Company name already exist.")
+            return redirect('/company_login')
+
+        user = User.objects.create_user(first_name=first_name, last_name=last_name, email=email, username=username, password=password)
+        company_user = company.objects.create(user=user, email=email, phone_number=phone, password=password, company_name=company_name, company_logo=company_logo, gender=gender, user_type="company", status="Pending")
+        user.save()
+        company_user.save()
+        #logout(request)
+        return render(request, "company_login.html")
+    return render(request, "company_signup.html")
+
+def company_login(request):
+    if request.method == "POST":
+        username = request.POST['username']
+        password = request.POST['password']
+        try:
+            user = authenticate(username=User.objects.get(email=username), password=password)
+        except:
+            user = authenticate(username=username, password=password)
+        if user is None:
+            messages.error(request, "Please enter a valid username or password.")
+            return redirect('/company_login')
+        elif user.is_superuser:
+            messages.error(request, "Please enter a valid username or password.")
+            return redirect('/company_login')
+        else:
+            try:
+                user1 = job_seeker.objects.get(user=user)
+            except:
+                user1 = company.objects.get(user=user)    
+            if user1.user_type == "company" and user1.status == "Accepted":
+                login(request, user)
+                #change to main_page
+                return redirect("/company_signup")
+            elif user1.user_type == "company" and user1.status == "Pending":
+                messages.error(request, "Account is still pending. Please contact the admin.")
+                return redirect('/company_login')
+            elif user1.user_type == "company" and user1.status == "Rejected":
+                messages.error(request, "Account is rejected or deactivated. Please contact the admin.")
+                return redirect('/company_login')
+            elif user1.user_type == "applicant":
+                messages.error(request, "Please enter a valid username or password.")
+                return redirect('/company_login')                            
+            else:
+                messages.error(request, "Please enter a valid username or password.")
+                return redirect('/company_login')                         
+    return render(request, "company_login.html")
