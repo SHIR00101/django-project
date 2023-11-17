@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from . models import *
 
-def login(request):
+def user_login(request):
     if request.user.is_authenticated:
         messages.error(request, "Already logged in.")
         return redirect("/")
@@ -13,28 +13,37 @@ def login(request):
             username = request.POST.get('Username')
             password = request.POST.get('Password')
             try:
+               #account exist
                 user = authenticate(username=User.objects.get(username=username), password=password)
             except User.DoesNotExist:
+                #account didnt exist
                 user = None
-
+            #invalid username/password
             if user is None:
                 messages.error(request, "Please enter a valid username or password.")
-                return redirect('/login')
+                return redirect('/user_login')
             elif user.is_superuser:
                 messages.error(request, "Please enter a valid username or password.")
-                return redirect('/login')
+                return redirect('/user_login')
+            
             else:
+                #check for login if it activate or not
                 try:
                     user1 = job_seeker.objects.get(user=user)
-                except job_seeker.DoesNotExist:
-                    user1 = None
-
-                if user1 is None:
-                    messages.success(request, "Login Successfully")
-                    return redirect('/')
+                except:
+                    user1 = company.objects.get(user=user)    
+                if user1.user_type == "applicant" and user1.status=="Activate":
+                    login(request, user)
+                    return redirect("/signup")  
+                elif user1.user_type == "applicant" and user1.status=="Deactivate":
+                    messages.error(request, "Account is deactivated. Please contact the admin.")
+                    return redirect('/user_login')
+                elif user1.user_type == "company":
+                    messages.error(request, "Please enter a valid username or password.")
+                    return redirect('/user_login')
                 else:
                     messages.error(request, "Please enter a valid username or password.")
-                    return redirect('/login')
+                    return redirect('/user_login')      
 
     return render(request, "login.html")
 
@@ -66,5 +75,6 @@ def signup(request):
         user.save()
         applicants.save()
         #logout(request)
-        return render(request, "signup.html")
+        return render(request, "login.html")
     return render(request, "signup.html")
+
