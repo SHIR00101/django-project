@@ -153,3 +153,55 @@ def company_login(request):
                 messages.error(request, "Please enter a valid username or password.")
                 return redirect('/company_login')                         
     return render(request, "company_login.html")
+
+def admin_login(request):
+    if request.user.is_authenticated:
+        messages.error(request, "Already logged in.")
+        return redirect("/")
+    else:
+        if request.method == "POST":
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+            try:
+                user = authenticate(username=User.objects.get(email=username), password=password)
+            except:
+                user = authenticate(username=username, password=password)
+            if user is None:
+                messages.error(request, "Please enter a valid username or password.")
+                return redirect('/admin_login')
+            elif user.is_superuser:
+                login(request, user)
+                return redirect("/companies_list")
+            elif user.is_superuser == False:
+                messages.error(request, "Please enter a valid username or password.")
+                return redirect('/admin_login')
+            else:
+                messages.error(request, "Please enter a valid username or password.")
+                return redirect('/admin_login')
+    return render(request, "login.html")   
+ 
+def all_companies(request):
+    if not request.user.is_authenticated:
+        return redirect("/admin_login")
+    companies = company.objects.all()
+    return render(request, "companies_list.html", {'companies':companies})
+
+def change_status(request, myid):
+    if not request.user.is_authenticated:
+        return redirect("/admin_login")
+    companies = company.objects.get(id=myid)
+    if request.method == "POST":
+        status = request.POST['status']
+        companies.status=status
+        companies.save()
+        messages.success(request, "Status changed successfully.")
+        return redirect("/companies_list")
+    return render(request, "company_change_status.html", {'company':companies})
+
+def delete_company(request, myid):
+    if not request.user.is_authenticated:
+        return redirect("/admin_login")
+    company = User.objects.filter(id=myid)
+    company.delete()
+    messages.success(request, "Successfully deleted.")
+    return redirect("/companies_list")
