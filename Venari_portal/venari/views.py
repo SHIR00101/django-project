@@ -181,10 +181,17 @@ def admin_login(request):
     return render(request, "login.html")   
  
 def all_companies(request):
-    if not request.user.is_authenticated:
-        return redirect("/admin_login")
-    companies = company.objects.all()
-    return render(request, "companies_list.html", {'companies':companies})
+    status_filter = request.GET.get('status', 'all')
+    if status_filter == 'all':
+        companies = company.objects.all()
+    else:
+        companies = company.objects.filter(status=status_filter)
+
+    context = {
+        'companies': companies,
+        'status_filter': status_filter,
+    }
+    return render(request, 'companies_list.html', context)
 
 def change_status(request, myid):
     if not request.user.is_authenticated:
